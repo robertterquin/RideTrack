@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:bikeapp/core/constants/app_colors.dart';
 import 'package:bikeapp/presentation/pages/splash/splash_page.dart';
+import 'package:bikeapp/presentation/pages/auth/get_started_page.dart';
+import 'package:bikeapp/presentation/pages/auth/login_page.dart';
+import 'package:bikeapp/presentation/pages/auth/signup_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,11 +19,15 @@ class MyApp extends StatelessWidget {
       title: 'RideTrack',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF9966)),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryOrange),
+        primaryColor: AppColors.primaryOrange,
+        useMaterial3: true,
       ),
       home: const SplashPage(),
       routes: {
-        '/login': (context) => const MyHomePage(title: 'RideTrack - Login'),
+        '/get-started': (context) => const GetStartedPage(),
+        '/auth/login': (context) => const LoginPage(),
+        '/auth/signup': (context) => const SignUpPage(),
       },
     );
   }

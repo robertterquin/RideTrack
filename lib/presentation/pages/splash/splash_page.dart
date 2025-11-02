@@ -36,10 +36,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   Future<void> _navigateToAuth() async {
     await Future.delayed(const Duration(seconds: 3));
     if (mounted) {
-      // TODO: Replace with your auth route navigation
-      // Example: Navigator.of(context).pushReplacementNamed('/auth/login');
-      // For now, we'll use a placeholder
-      Navigator.of(context).pushReplacementNamed('/login');
+      Navigator.of(context).pushReplacementNamed('/get-started');
     }
   }
 
