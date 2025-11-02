@@ -28,35 +28,8 @@ class GetStartedPage extends StatelessWidget {
                 // Logo
                 Image.asset(
                   'assets/images/BikeTrack.png',
-                  width: 180,
-                  height: 180,
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // App Name
-                const Text(
-                  'RideTrack',
-                  style: TextStyle(
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Tagline
-                const Text(
-                  'Empower Your Fitness\nGoals Today!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                    letterSpacing: 0.3,
-                  ),
+                  width: 260,
+                  height: 260,
                 ),
                 
                 const Spacer(),
