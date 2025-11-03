@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bikeapp/core/constants/app_colors.dart';
+import 'package:bikeapp/core/services/auth_service.dart';
 
 /// Sign Up / Register Page
 /// Allows new users to create an account
@@ -16,8 +17,10 @@ class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _authService = AuthService();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,12 +31,49 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  void _handleSignUp() {
+  void _handleSignUp() async {
     if (_formKey.currentState?.validate() ?? false) {
-      // TODO: Implement actual sign up logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign up functionality coming soon!')),
-      );
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        // Create user account with Firebase Auth
+        await _authService.signUp(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          name: _nameController.text.trim(),
+        );
+
+        if (!mounted) return;
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully! Please verify your email.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+
+        // Navigate to dashboard
+        Navigator.of(context).pushReplacementNamed('/dashboard');
+      } catch (e) {
+        if (!mounted) return;
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -234,7 +274,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _handleSignUp,
+                    onPressed: _isLoading ? null : _handleSignUp,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryOrange,
                       foregroundColor: Colors.white,
@@ -242,15 +282,25 @@ class _SignUpPageState extends State<SignUpPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
+                      disabledBackgroundColor: AppColors.lightGrey,
                     ),
-                    child: const Text(
-                      'Create Account',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Create Account',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                   ),
                 ),
                 

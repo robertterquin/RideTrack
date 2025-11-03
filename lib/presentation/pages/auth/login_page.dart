@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bikeapp/core/constants/app_colors.dart';
+import 'package:bikeapp/core/services/auth_service.dart';
 
 /// Login Page
 /// Allows existing users to sign in
@@ -14,7 +15,9 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = AuthService();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -23,11 +26,40 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  void _handleLogin() async {
     if (_formKey.currentState?.validate() ?? false) {
-      // TODO: Implement actual login logic with Firebase/backend
-      // For now, navigate to dashboard
-      Navigator.of(context).pushReplacementNamed('/dashboard');
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        // Sign in with Firebase Auth
+        await _authService.signIn(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+
+        if (!mounted) return;
+
+        // Navigate to dashboard on success
+        Navigator.of(context).pushReplacementNamed('/dashboard');
+      } catch (e) {
+        if (!mounted) return;
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -178,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _handleLogin,
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryOrange,
                       foregroundColor: Colors.white,
@@ -186,15 +218,25 @@ class _LoginPageState extends State<LoginPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
+                      disabledBackgroundColor: AppColors.lightGrey,
                     ),
-                    child: const Text(
-                      'Sign In',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                   ),
                 ),
                 
