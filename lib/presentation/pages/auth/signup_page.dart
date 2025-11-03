@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bikeapp/core/constants/app_colors.dart';
 import 'package:bikeapp/core/services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Sign Up / Register Page
 /// Allows new users to create an account
@@ -33,31 +34,34 @@ class _SignUpPageState extends State<SignUpPage> {
 
   void _handleSignUp() async {
     if (_formKey.currentState?.validate() ?? false) {
+      print('📝 Starting signup process...');
+      
       setState(() {
         _isLoading = true;
       });
 
+      UserCredential? userCredential;
+      
       try {
+        print('🔄 Calling AuthService.signUp...');
+        
         // Create user account with Firebase Auth
-        await _authService.signUp(
+        userCredential = await _authService.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           name: _nameController.text.trim(),
         );
 
-        if (!mounted) return;
+        print('✅ Signup successful! User ID: ${userCredential.user?.uid}');
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created successfully! Please verify your email.'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-
-        // Navigate to dashboard
-        Navigator.of(context).pushReplacementNamed('/dashboard');
-      } catch (e) {
+      } catch (e, stackTrace) {
+        print('❌ Signup error: $e');
+        print('Stack trace: $stackTrace');
+        
+        setState(() {
+          _isLoading = false;
+        });
+        
         if (!mounted) return;
 
         // Show error message
@@ -65,15 +69,39 @@ class _SignUpPageState extends State<SignUpPage> {
           SnackBar(
             content: Text(e.toString()),
             backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 4),
           ),
         );
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+        return; // Exit early on error
       }
+
+      // If we got here, signup was successful
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (!mounted) {
+        print('⚠️ Widget not mounted, skipping navigation');
+        return;
+      }
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully!'),
+          backgroundColor: AppColors.success,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      print('🚀 Navigating to dashboard...');
+      
+      // Navigate to dashboard
+      Navigator.of(context).pushReplacementNamed('/dashboard');
+      
+      print('✅ Navigation complete');
+    } else {
+      print('❌ Form validation failed');
     }
   }
 

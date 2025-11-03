@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -31,26 +32,42 @@ class AuthService {
 
       print('✅ User account created successfully: ${userCredential.user?.uid}');
 
-      // Try to store additional user data in Firestore
+      // Try to store additional user data in Firestore with a timeout
       try {
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'name': name,
-          'email': email,
-          'createdAt': FieldValue.serverTimestamp(),
-          'totalRides': 0,
-          'totalDistance': 0.0,
-          'totalTime': 0,
-        });
+        await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set({
+              'name': name,
+              'email': email,
+              'createdAt': FieldValue.serverTimestamp(),
+              'totalRides': 0,
+              'totalDistance': 0.0,
+              'totalTime': 0,
+            })
+            .timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                print('⚠️ Firestore write timed out after 5 seconds');
+                throw TimeoutException('Firestore write timed out');
+              },
+            );
         print('✅ User profile saved to Firestore');
       } catch (firestoreError) {
         // Log Firestore error but don't fail signup
         print('⚠️ Warning: Could not save user profile to Firestore: $firestoreError');
-        print('User account was still created successfully. Please enable Cloud Firestore in Firebase Console.');
+        print('💡 Please enable Cloud Firestore in Firebase Console: https://console.firebase.google.com/');
+        // Don't rethrow - account was created successfully
       }
 
-      // Send email verification
+      // Send email verification (also with timeout)
       try {
-        await userCredential.user?.sendEmailVerification();
+        await userCredential.user?.sendEmailVerification().timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            print('⚠️ Email verification timed out');
+          },
+        );
         print('✅ Verification email sent');
       } catch (emailError) {
         print('⚠️ Warning: Could not send verification email: $emailError');

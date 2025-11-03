@@ -28,22 +28,31 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleLogin() async {
     if (_formKey.currentState?.validate() ?? false) {
+      print('📝 Starting login process...');
+      
       setState(() {
         _isLoading = true;
       });
 
       try {
+        print('🔄 Calling AuthService.signIn...');
+        
         // Sign in with Firebase Auth
-        await _authService.signIn(
+        final userCredential = await _authService.signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
 
-        if (!mounted) return;
+        print('✅ Login successful! User ID: ${userCredential.user?.uid}');
 
-        // Navigate to dashboard on success
-        Navigator.of(context).pushReplacementNamed('/dashboard');
-      } catch (e) {
+      } catch (e, stackTrace) {
+        print('❌ Login error: $e');
+        print('Stack trace: $stackTrace');
+        
+        setState(() {
+          _isLoading = false;
+        });
+        
         if (!mounted) return;
 
         // Show error message
@@ -51,15 +60,30 @@ class _LoginPageState extends State<LoginPage> {
           SnackBar(
             content: Text(e.toString()),
             backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 4),
           ),
         );
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+        return; // Exit early on error
       }
+
+      // If we got here, login was successful
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (!mounted) {
+        print('⚠️ Widget not mounted, skipping navigation');
+        return;
+      }
+
+      print('🚀 Navigating to dashboard...');
+
+      // Navigate to dashboard on success
+      Navigator.of(context).pushReplacementNamed('/dashboard');
+      
+      print('✅ Navigation complete');
+    } else {
+      print('❌ Form validation failed');
     }
   }
 
