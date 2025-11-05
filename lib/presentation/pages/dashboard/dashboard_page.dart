@@ -82,9 +82,10 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Top Row: Greeting on the left, action icons on the right
                       Row(
