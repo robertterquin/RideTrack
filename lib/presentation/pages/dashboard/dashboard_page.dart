@@ -97,11 +97,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                 children: [
                                   TextSpan(
                                     text: '$_greeting, ',
-                                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 16, fontWeight: FontWeight.w400),
+                                    style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 18, fontWeight: FontWeight.w500),
                                   ),
                                   TextSpan(
                                     text: _userName,
-                                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
                                   ),
                                 ],
                               ),
@@ -111,8 +111,16 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           Row(
                             children: [
-                              IconButton(icon: const Icon(Icons.notifications_outlined, color: Colors.white), onPressed: () {}),
-                              IconButton(icon: const Icon(Icons.person_outline, color: Colors.white), onPressed: () {}),
+                              IconButton(
+                                icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+                                padding: const EdgeInsets.all(8),
+                                onPressed: () {},
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.person_outline, color: Colors.white, size: 28),
+                                padding: const EdgeInsets.all(8),
+                                onPressed: () {},
+                              ),
                             ],
                           ),
                         ],
