@@ -15,35 +15,60 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   String _userName = 'User';
   String _greeting = 'Good Day';
+  bool _isLoadingUser = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
     _updateGreeting();
+    _loadUserData();
   }
 
   /// Load user data from Firestore
   Future<void> _loadUserData() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
+      print('🔍 Current user: ${user?.uid}');
+      
       if (user != null) {
+        print('📥 Fetching user data from Firestore...');
         final doc = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
             .get();
         
+        print('📄 Document exists: ${doc.exists}');
+        print('📄 Document data: ${doc.data()}');
+        
         if (doc.exists && mounted) {
           final fullName = doc.data()?['name'] ?? 'User';
+          print('👤 Full name from Firestore: $fullName');
+          
           // Extract first name only (split by space and take first part)
           final firstName = fullName.split(' ').first;
+          print('✅ First name extracted: $firstName');
+          
           setState(() {
             _userName = firstName;
+            _isLoadingUser = false;
+          });
+        } else {
+          print('⚠️ Document does not exist or widget unmounted');
+          setState(() {
+            _isLoadingUser = false;
           });
         }
+      } else {
+        print('⚠️ No user is currently logged in');
+        setState(() {
+          _isLoadingUser = false;
+        });
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      print('❌ Error loading user data: $e');
+      setState(() {
+        _isLoadingUser = false;
+      });
     }
   }
 
@@ -96,22 +121,31 @@ class _DashboardPageState extends State<DashboardPage> {
                         children: [
                           // Greeting placed on the left and vertically aligned with icons
                           Expanded(
-                            child: RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '$_greeting, ',
-                                    style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 18, fontWeight: FontWeight.w500),
+                            child: _isLoadingUser
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : RichText(
+                                    text: TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: '$_greeting, ',
+                                          style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 18, fontWeight: FontWeight.w500),
+                                        ),
+                                        TextSpan(
+                                          text: _userName,
+                                          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+                                        ),
+                                      ],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  TextSpan(
-                                    text: _userName,
-                                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
-                                  ),
-                                ],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
                           ),
                           Row(
                             children: [
