@@ -39,14 +39,7 @@ class _RidesPageState extends State<RidesPage> with SingleTickerProviderStateMix
               floating: true,
               pinned: true,
               automaticallyImplyLeading: false,
-              title: const Text(
-                'My Rides',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
-              ),
+              toolbarHeight: 56,
               actions: [
                 IconButton(
                   icon: const Icon(Icons.search, color: AppColors.textPrimary),
