@@ -38,6 +38,13 @@ dependencies:
   cloud_firestore: ^6.0.3
   firebase_auth: ^6.1.1
   firebase_storage: ^13.0.3
+  
+  # OpenStreetMap integration
+  flutter_map: ^7.0.0
+  latlong2: ^0.9.0
+  
+  # Location services
+  geolocator: ^10.1.0
 
 dev_dependencies:
   flutter_test:
