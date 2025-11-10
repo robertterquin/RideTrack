@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bikeapp/core/constants/app_colors.dart';
-import 'package:bikeapp/presentation/pages/ride/start_ride_page.dart';
+// StartRidePage intentionally not imported here; start is available from Dashboard
 
 /// Rides Page
 /// Shows ride history, filters, and allows starting new rides
@@ -139,18 +139,7 @@ class _RidesPageState extends State<RidesPage> with SingleTickerProviderStateMix
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const StartRidePage(),
-            ),
-          );
-        },
-        backgroundColor: AppColors.primaryOrange,
-        icon: const Icon(Icons.play_arrow),
-        label: const Text('Start Ride', style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      // Floating action button removed - Start Ride is available from Dashboard
     );
   }
 
