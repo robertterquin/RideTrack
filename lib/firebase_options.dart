@@ -46,7 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '418265530629',
     projectId: 'ridetrack-a18f6',
     authDomain: 'ridetrack-a18f6.firebaseapp.com',
-    storageBucket: 'ridetrack-a18f6.firebasestorage.app',
+    storageBucket: 'ridetrack-a18f6.appspot.com',
     measurementId: 'G-HM977VRFJH',
   );
 
@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
     appId: '1:418265530629:android:0843a6111910c4a472376c',
     messagingSenderId: '418265530629',
     projectId: 'ridetrack-a18f6',
-    storageBucket: 'ridetrack-a18f6.firebasestorage.app',
+    storageBucket: 'ridetrack-a18f6.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     appId: '1:418265530629:ios:e5d4a070e6d56bc772376c',
     messagingSenderId: '418265530629',
     projectId: 'ridetrack-a18f6',
-    storageBucket: 'ridetrack-a18f6.firebasestorage.app',
+    storageBucket: 'ridetrack-a18f6.appspot.com',
     iosBundleId: 'com.example.bikeapp',
   );
 
@@ -72,7 +72,7 @@ class DefaultFirebaseOptions {
     appId: '1:418265530629:ios:e5d4a070e6d56bc772376c',
     messagingSenderId: '418265530629',
     projectId: 'ridetrack-a18f6',
-    storageBucket: 'ridetrack-a18f6.firebasestorage.app',
+    storageBucket: 'ridetrack-a18f6.appspot.com',
     iosBundleId: 'com.example.bikeapp',
   );
 
@@ -82,7 +82,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '418265530629',
     projectId: 'ridetrack-a18f6',
     authDomain: 'ridetrack-a18f6.firebaseapp.com',
-    storageBucket: 'ridetrack-a18f6.firebasestorage.app',
+    storageBucket: 'ridetrack-a18f6.appspot.com',
     measurementId: 'G-609GQ1Y458',
   );
 }

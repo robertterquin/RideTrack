@@ -1,10 +1,10 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:bikeapp/core/constants/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 /// Edit Profile Page
 /// Allows users to update their personal information
@@ -26,7 +26,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String _defaultRideType = 'Recreation'; // Recreation or Commute
   bool _isLoading = true;
   bool _isSaving = false;
-  File? _imageFile;
+  XFile? _imageFile;
   String? _profileImageUrl;
 
   @override
@@ -93,7 +93,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (pickedFile != null) {
         setState(() {
-          _imageFile = File(pickedFile.path);
+          _imageFile = pickedFile;
         });
       }
     } catch (e) {
@@ -130,7 +130,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
           .child('profile_images')
           .child('${user.uid}.jpg');
 
-      await storageRef.putFile(_imageFile!);
+      // Read file as bytes (works on all platforms including web)
+      final bytes = await _imageFile!.readAsBytes();
+      await storageRef.putData(bytes);
       final downloadUrl = await storageRef.getDownloadURL();
       
       return downloadUrl;
@@ -276,11 +278,36 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 height: 120,
                                 color: AppColors.backgroundGrey,
                                 child: _imageFile != null
-                                    ? Image.memory(
-                                        _imageFile!.readAsBytesSync(),
-                                        fit: BoxFit.cover,
-                                        width: 120,
-                                        height: 120,
+                                    ? FutureBuilder<List<int>>(
+                                        future: _imageFile!.readAsBytes(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasData) {
+                                            return Image.memory(
+                                              Uint8List.fromList(snapshot.data!),
+                                              fit: BoxFit.cover,
+                                              width: 120,
+                                              height: 120,
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return Center(
+                                              child: Text(
+                                                _nameController.text.isNotEmpty
+                                                    ? _nameController.text[0].toUpperCase()
+                                                    : 'U',
+                                                style: const TextStyle(
+                                                  fontSize: 40,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppColors.textSecondary,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                          return Center(
+                                            child: CircularProgressIndicator(
+                                              color: AppColors.primaryOrange,
+                                            ),
+                                          );
+                                        },
                                       )
                                     : (_profileImageUrl != null && _profileImageUrl!.isNotEmpty
                                         ? Image.network(
