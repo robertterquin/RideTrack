@@ -46,6 +46,12 @@ dependencies:
   # Location services
   geolocator: ^10.1.0
   
+  # Geocoding for address search
+  geocoding: ^3.0.0
+  
+  # HTTP client for routing API
+  http: ^1.2.0
+  
   # Image picker
   image_picker: ^1.0.7
 

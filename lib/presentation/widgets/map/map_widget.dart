@@ -10,6 +10,7 @@ class MapWidget extends StatelessWidget {
   final List<Marker>? markers;
   final List<Polyline>? polylines;
   final MapController? mapController;
+  final Function(LatLng)? onTap;
 
   const MapWidget({
     super.key,
@@ -18,6 +19,7 @@ class MapWidget extends StatelessWidget {
     this.markers,
     this.polylines,
     this.mapController,
+    this.onTap,
   });
 
   @override
@@ -27,6 +29,7 @@ class MapWidget extends StatelessWidget {
       options: MapOptions(
         initialCenter: initialCenter,
         initialZoom: initialZoom,
+        onTap: onTap != null ? (tapPosition, point) => onTap!(point) : null,
       ),
       children: [
         TileLayer(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bikeapp/core/constants/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:bikeapp/presentation/pages/ride/start_ride_page.dart';
+import 'package:bikeapp/presentation/pages/ride/unified_ride_page.dart';
 
 /// Dashboard / Home Page
 /// Shows user's stats summary, recent rides, and quick action buttons
@@ -213,57 +213,69 @@ class _DashboardPageState extends State<DashboardPage> {
             // Quick Actions
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      context,
-                      'Start Ride',
-                      Icons.play_circle_filled,
-                      AppColors.primaryOrange,
-                      () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const StartRidePage(),
-                          ),
-                        );
-                      },
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionButton(
+                          context,
+                          'New Ride',
+                          Icons.directions_bike,
+                          AppColors.primaryOrange,
+                          () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const UnifiedRidePage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildActionButton(
+                          context,
+                          'Ride History',
+                          Icons.history,
+                          const Color(0xFF4CAF50),
+                          () {
+                            // Navigate to rides page (tab 1)
+                            DefaultTabController.of(context).animateTo(1);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildActionButton(
-                      context,
-                      'Goals',
-                      Icons.flag_outlined,
-                      AppColors.primaryPurple,
-                      () {
-                        // TODO: Navigate to goals
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Row(
-                              children: [
-                                Icon(Icons.info_outline, color: Colors.white),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Goals feature coming soon!',
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            backgroundColor: AppColors.primaryPurple,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            margin: const EdgeInsets.all(16),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionButton(
+                          context,
+                          'Goals',
+                          Icons.flag_outlined,
+                          const Color(0xFF2196F3),
+                          () {
+                            // Navigate to goals page (tab 2)
+                            DefaultTabController.of(context).animateTo(2);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildActionButton(
+                          context,
+                          'Statistics',
+                          Icons.bar_chart,
+                          AppColors.primaryPurple,
+                          () {
+                            // Navigate to statistics page (tab 3)
+                            DefaultTabController.of(context).animateTo(3);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
