@@ -11,19 +11,14 @@ class RidesPage extends StatefulWidget {
   State<RidesPage> createState() => _RidesPageState();
 }
 
-class _RidesPageState extends State<RidesPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _RidesPageState extends State<RidesPage> {
   String _selectedFilter = 'All';
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -31,176 +26,195 @@ class _RidesPageState extends State<RidesPage> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundGrey,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              floating: true,
-              pinned: true,
-              automaticallyImplyLeading: false,
-              toolbarHeight: 56,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.search, color: AppColors.textPrimary),
-                  onPressed: () {
-                    // TODO: Implement search
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Row(
-                          children: [
-                            Icon(Icons.info_outline, color: Colors.white),
-                            SizedBox(width: 12),
-                            Text('Search coming soon!'),
-                          ],
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            floating: true,
+            pinned: true,
+            automaticallyImplyLeading: false,
+            toolbarHeight: 72,
+            flexibleSpace: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundGrey,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        backgroundColor: AppColors.primaryOrange,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        margin: const EdgeInsets.all(16),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.filter_list, color: AppColors.textPrimary),
-                  onSelected: (value) {
-                    setState(() {
-                      _selectedFilter = value;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            const Icon(Icons.filter_list, color: Colors.white),
-                            const SizedBox(width: 12),
-                            Text('Filtering by: $value'),
-                          ],
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value.toLowerCase();
+                            });
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Search rides...',
+                            hintStyle: TextStyle(
+                              color: AppColors.textSecondary.withOpacity(0.6),
+                              fontSize: 14,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: AppColors.textSecondary,
+                              size: 20,
+                            ),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(
+                                      Icons.clear,
+                                      color: AppColors.textSecondary,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchController.clear();
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
                         ),
-                        backgroundColor: AppColors.primaryPurple,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        margin: const EdgeInsets.all(16),
-                        duration: const Duration(seconds: 1),
                       ),
-                    );
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'All', child: Text('All Rides')),
-                    const PopupMenuItem(value: 'This Week', child: Text('This Week')),
-                    const PopupMenuItem(value: 'This Month', child: Text('This Month')),
-                    const PopupMenuItem(value: 'This Year', child: Text('This Year')),
-                  ],
-                ),
-              ],
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(64),
-                child: Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                  child: Container(
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryOrange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: TabBar(
-                      controller: _tabController,
-                      indicator: BoxDecoration(
-                        color: AppColors.primaryOrange.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(10),
+                    const SizedBox(width: 12),
+                    PopupMenuButton<String>(
+                      icon: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundGrey,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.filter_list,
+                          color: AppColors.textPrimary,
+                          size: 20,
+                        ),
                       ),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      labelColor: AppColors.primaryOrange,
-                      unselectedLabelColor: AppColors.textSecondary,
-                      labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-                      tabs: const [
-                        Tab(text: 'All'),
-                        Tab(text: 'Commute'),
-                        Tab(text: 'Recreation'),
+                      onSelected: (value) {
+                        setState(() {
+                          _selectedFilter = value;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const Icon(Icons.filter_list, color: Colors.white),
+                                const SizedBox(width: 12),
+                                Text('Filtering by: $value'),
+                              ],
+                            ),
+                            backgroundColor: AppColors.primaryPurple,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            margin: const EdgeInsets.all(16),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 'All', child: Text('All Rides')),
+                        const PopupMenuItem(value: 'This Week', child: Text('This Week')),
+                        const PopupMenuItem(value: 'This Month', child: Text('This Month')),
+                        const PopupMenuItem(value: 'This Year', child: Text('This Year')),
                       ],
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
-          ];
-        },
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildRidesList('All'),
-            _buildRidesList('Commute'),
-            _buildRidesList('Recreation'),
-          ],
-        ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
+            sliver: _buildRidesList(),
+          ),
+        ],
       ),
-      // Floating action button removed - Start Ride is available from Dashboard
     );
   }
 
-  Widget _buildRidesList(String category) {
+  Widget _buildRidesList() {
+    final allRides = _getMockRides();
     
-    final rides = _getMockRides(category);
+    // Filter rides based on search query
+    final filteredRides = allRides.where((ride) {
+      if (_searchQuery.isEmpty) return true;
+      return ride['title']!.toLowerCase().contains(_searchQuery) ||
+             ride['distance']!.toLowerCase().contains(_searchQuery) ||
+             ride['type']!.toLowerCase().contains(_searchQuery);
+    }).toList();
 
-    if (rides.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.directions_bike_outlined,
-              size: 80,
-              color: AppColors.textSecondary.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No rides found',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary.withOpacity(0.7),
+    if (filteredRides.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.directions_bike_outlined,
+                size: 80,
+                color: AppColors.textSecondary.withOpacity(0.3),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _selectedFilter == 'All'
-                  ? 'Tap "Start Ride" to record your first ride'
-                  : 'No rides in $_selectedFilter',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary.withOpacity(0.5),
+              const SizedBox(height: 16),
+              Text(
+                _searchQuery.isNotEmpty ? 'No rides found' : 'No rides yet',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary.withOpacity(0.7),
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                _searchQuery.isNotEmpty
+                    ? 'Try a different search term'
+                    : _selectedFilter == 'All'
+                        ? 'Tap "Start New Ride" from Dashboard to begin'
+                        : 'No rides in $_selectedFilter',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary.withOpacity(0.5),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
-      itemCount: rides.length,
-      itemBuilder: (context, index) {
-        final ride = rides[index];
-        return _buildRideCard(
-          title: ride['title']!,
-          distance: ride['distance']!,
-          duration: ride['duration']!,
-          date: ride['date']!,
-          type: ride['type']!,
-          icon: ride['icon'] as IconData,
-        );
-      },
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final ride = filteredRides[index];
+          return _buildRideCard(
+            title: ride['title']!,
+            distance: ride['distance']!,
+            duration: ride['duration']!,
+            date: ride['date']!,
+            type: ride['type']!,
+            icon: ride['icon'] as IconData,
+          );
+        },
+        childCount: filteredRides.length,
+      ),
     );
   }
 
-  List<Map<String, dynamic>> _getMockRides(String category) {
-    final allRides = [
+  List<Map<String, dynamic>> _getMockRides() {
+    return [
       {
         'title': 'Morning Commute',
         'distance': '12.5 km',
@@ -250,9 +264,6 @@ class _RidesPageState extends State<RidesPage> with SingleTickerProviderStateMix
         'icon': Icons.location_city,
       },
     ];
-
-    if (category == 'All') return allRides;
-    return allRides.where((ride) => ride['type'] == category).toList();
   }
 
   Widget _buildRideCard({
