@@ -3,6 +3,9 @@ import 'package:bikeapp/core/constants/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bikeapp/presentation/pages/ride/unified_ride_page.dart';
+import 'package:bikeapp/data/repositories/ride_repository.dart';
+import 'package:bikeapp/data/models/ride.dart';
+import 'package:intl/intl.dart';
 
 /// Dashboard / Home Page
 /// Shows user's stats summary, recent rides, and quick action buttons
@@ -17,12 +20,18 @@ class _DashboardPageState extends State<DashboardPage> {
   String _userName = 'User';
   String _greeting = 'Good Day';
   bool _isLoadingUser = true;
+  final RideRepository _rideRepository = RideRepository();
+  List<Ride> _recentRides = [];
+  bool _isLoadingRides = true;
+  Map<String, dynamic>? _userStats;
 
   @override
   void initState() {
     super.initState();
     _updateGreeting();
     _loadUserData();
+    _loadRecentRides();
+    _loadUserStats();
   }
 
   /// Load user data from Firestore
@@ -82,6 +91,95 @@ class _DashboardPageState extends State<DashboardPage> {
       _greeting = 'Good Afternoon';
     } else {
       _greeting = 'Good Evening';
+    }
+  }
+
+  /// Load recent rides from Firestore
+  Future<void> _loadRecentRides() async {
+    print('🔄 Loading recent rides...');
+    setState(() {
+      _isLoadingRides = true;
+    });
+
+    try {
+      final rides = await _rideRepository.getRecentRides();
+      print('📊 Dashboard received ${rides.length} rides');
+      if (mounted) {
+        setState(() {
+          _recentRides = rides;
+          _isLoadingRides = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading recent rides: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingRides = false;
+        });
+      }
+    }
+  }
+
+  /// Load user stats from Firestore
+  Future<void> _loadUserStats() async {
+    print('📊 Loading user stats...');
+    try {
+      final stats = await _rideRepository.getUserStats();
+      print('📈 User stats: $stats');
+      if (mounted && stats != null) {
+        setState(() {
+          _userStats = stats;
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading user stats: $e');
+    }
+  }
+
+  String _formatDistance(double meters) {
+    if (meters < 1000) {
+      return '${meters.toStringAsFixed(0)} m';
+    } else {
+      return '${(meters / 1000).toStringAsFixed(1)} km';
+    }
+  }
+
+  String _formatDuration(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    } else {
+      return '${minutes} min';
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final rideDate = DateTime(date.year, date.month, date.day);
+
+    if (rideDate == today) {
+      return 'Today, ${DateFormat.jm().format(date)}';
+    } else if (rideDate == yesterday) {
+      return 'Yesterday, ${DateFormat.jm().format(date)}';
+    } else {
+      return DateFormat('MMM d, h:mm a').format(date);
+    }
+  }
+
+  IconData _getRideIcon(Ride ride) {
+    final hour = ride.startTime.hour;
+    if (ride.type == 'Commute') {
+      return Icons.business;
+    } else if (hour < 12) {
+      return Icons.wb_sunny_outlined;
+    } else if (hour < 17) {
+      return Icons.wb_cloudy_outlined;
+    } else {
+      return Icons.nightlight_outlined;
     }
   }
 
@@ -201,9 +299,25 @@ class _DashboardPageState extends State<DashboardPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatItem('Total Rides', '12', Icons.directions_bike),
-                      _buildStatItem('Distance', '145 km', Icons.straighten),
-                      _buildStatItem('Time', '8h 30m', Icons.access_time),
+                      _buildStatItem(
+                        'Total Rides',
+                        _userStats != null ? '${_userStats!['totalRides']}' : '0',
+                        Icons.directions_bike,
+                      ),
+                      _buildStatItem(
+                        'Distance',
+                        _userStats != null
+                            ? _formatDistance(_userStats!['totalDistance'])
+                            : '0 km',
+                        Icons.straighten,
+                      ),
+                      _buildStatItem(
+                        'Time',
+                        _userStats != null
+                            ? _formatDuration(_userStats!['totalTime'])
+                            : '0m',
+                        Icons.access_time,
+                      ),
                     ],
                   ),
                 ],
@@ -364,7 +478,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // TODO: Navigate to ride history
+                          DefaultTabController.of(context).animateTo(1);
                         },
                         child: const Text(
                           'View All',
@@ -374,26 +488,60 @@ class _DashboardPageState extends State<DashboardPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _buildRideCard(
-                    'Morning Commute',
-                    '12.5 km • 35 min',
-                    'Today, 8:30 AM',
-                    Icons.wb_sunny_outlined,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildRideCard(
-                    'Evening Ride',
-                    '18.2 km • 52 min',
-                    'Yesterday, 6:15 PM',
-                    Icons.nightlight_outlined,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildRideCard(
-                    'Weekend Trail',
-                    '32.8 km • 1h 45m',
-                    'Nov 1, 10:00 AM',
-                    Icons.terrain,
-                  ),
+                  if (_isLoadingRides)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: CircularProgressIndicator(color: AppColors.primaryOrange),
+                      ),
+                    )
+                  else if (_recentRides.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.directions_bike_outlined,
+                              size: 48,
+                              color: AppColors.textSecondary.withOpacity(0.3),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No rides yet',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.textSecondary.withOpacity(0.7),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Tap "Start New Ride" to begin',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary.withOpacity(0.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    ..._recentRides.map((ride) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildRideCard(
+                          ride.name,
+                          '${_formatDistance(ride.distance)} • ${_formatDuration(ride.duration)}',
+                          _formatDate(ride.startTime),
+                          _getRideIcon(ride),
+                        ),
+                      );
+                    }),
                 ],
               ),
             ),

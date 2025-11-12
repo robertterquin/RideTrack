@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bikeapp/core/constants/app_colors.dart';
-// StartRidePage intentionally not imported here; start is available from Dashboard
+import 'package:bikeapp/data/repositories/ride_repository.dart';
+import 'package:bikeapp/data/models/ride.dart';
+import 'package:intl/intl.dart';
 
 /// Rides Page
 /// Shows ride history, filters, and allows starting new rides
@@ -15,11 +17,45 @@ class _RidesPageState extends State<RidesPage> {
   String _selectedFilter = 'All';
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  final RideRepository _rideRepository = RideRepository();
+  List<Ride> _rides = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRides();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRides() async {
+    print('🔄 Rides page: Loading rides...');
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final rides = await _rideRepository.getRides();
+      print('📊 Rides page received ${rides.length} rides');
+      if (mounted) {
+        setState(() {
+          _rides = rides;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Rides page error: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -146,14 +182,19 @@ class _RidesPageState extends State<RidesPage> {
   }
 
   Widget _buildRidesList() {
-    final allRides = _getMockRides();
-    
+    if (_isLoading) {
+      return const SliverFillRemaining(
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryOrange),
+        ),
+      );
+    }
+
     // Filter rides based on search query
-    final filteredRides = allRides.where((ride) {
+    final filteredRides = _rides.where((ride) {
       if (_searchQuery.isEmpty) return true;
-      return ride['title']!.toLowerCase().contains(_searchQuery) ||
-             ride['distance']!.toLowerCase().contains(_searchQuery) ||
-             ride['type']!.toLowerCase().contains(_searchQuery);
+      return ride.name.toLowerCase().contains(_searchQuery) ||
+             ride.type.toLowerCase().contains(_searchQuery);
     }).toList();
 
     if (filteredRides.isEmpty) {
@@ -180,9 +221,7 @@ class _RidesPageState extends State<RidesPage> {
               Text(
                 _searchQuery.isNotEmpty
                     ? 'Try a different search term'
-                    : _selectedFilter == 'All'
-                        ? 'Tap "Start New Ride" from Dashboard to begin'
-                        : 'No rides in $_selectedFilter',
+                    : 'Tap "Start New Ride" from Dashboard to begin',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary.withOpacity(0.5),
@@ -200,12 +239,12 @@ class _RidesPageState extends State<RidesPage> {
         (context, index) {
           final ride = filteredRides[index];
           return _buildRideCard(
-            title: ride['title']!,
-            distance: ride['distance']!,
-            duration: ride['duration']!,
-            date: ride['date']!,
-            type: ride['type']!,
-            icon: ride['icon'] as IconData,
+            title: ride.name,
+            distance: _formatDistance(ride.distance),
+            duration: _formatDuration(ride.duration),
+            date: _formatDate(ride.startTime),
+            type: ride.type,
+            icon: _getRideIcon(ride),
           );
         },
         childCount: filteredRides.length,
@@ -213,58 +252,54 @@ class _RidesPageState extends State<RidesPage> {
     );
   }
 
-  List<Map<String, dynamic>> _getMockRides() {
-    return [
-      {
-        'title': 'Morning Commute',
-        'distance': '12.5 km',
-        'duration': '35 min',
-        'date': 'Today, 8:30 AM',
-        'type': 'Commute',
-        'icon': Icons.wb_sunny_outlined,
-      },
-      {
-        'title': 'Evening Ride',
-        'distance': '18.2 km',
-        'duration': '52 min',
-        'date': 'Yesterday, 6:15 PM',
-        'type': 'Recreation',
-        'icon': Icons.nightlight_outlined,
-      },
-      {
-        'title': 'Weekend Trail',
-        'distance': '32.8 km',
-        'duration': '1h 45m',
-        'date': 'Nov 7, 10:00 AM',
-        'type': 'Recreation',
-        'icon': Icons.terrain,
-      },
-      {
-        'title': 'Office Commute',
-        'distance': '11.3 km',
-        'duration': '32 min',
-        'date': 'Nov 6, 8:45 AM',
-        'type': 'Commute',
-        'icon': Icons.business,
-      },
-      {
-        'title': 'Lunch Break Ride',
-        'distance': '8.5 km',
-        'duration': '25 min',
-        'date': 'Nov 6, 12:30 PM',
-        'type': 'Recreation',
-        'icon': Icons.restaurant,
-      },
-      {
-        'title': 'City Tour',
-        'distance': '25.4 km',
-        'duration': '1h 18m',
-        'date': 'Nov 5, 3:00 PM',
-        'type': 'Recreation',
-        'icon': Icons.location_city,
-      },
-    ];
+  String _formatDistance(double meters) {
+    if (meters < 1000) {
+      return '${meters.toStringAsFixed(0)} m';
+    } else {
+      return '${(meters / 1000).toStringAsFixed(1)} km';
+    }
   }
+
+  String _formatDuration(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    } else {
+      return '${minutes} min';
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final rideDate = DateTime(date.year, date.month, date.day);
+
+    if (rideDate == today) {
+      return 'Today, ${DateFormat.jm().format(date)}';
+    } else if (rideDate == yesterday) {
+      return 'Yesterday, ${DateFormat.jm().format(date)}';
+    } else {
+      return DateFormat('MMM d, h:mm a').format(date);
+    }
+  }
+
+  IconData _getRideIcon(Ride ride) {
+    final hour = ride.startTime.hour;
+    if (ride.type == 'Commute') {
+      return Icons.business;
+    } else if (hour < 12) {
+      return Icons.wb_sunny_outlined;
+    } else if (hour < 17) {
+      return Icons.wb_cloudy_outlined;
+    } else {
+      return Icons.nightlight_outlined;
+    }
+  }
+
+
 
   Widget _buildRideCard({
     required String title,

@@ -4,6 +4,9 @@ import 'package:bikeapp/core/constants/app_colors.dart';
 import 'package:bikeapp/presentation/widgets/map/map_widget.dart';
 import 'package:bikeapp/core/services/routing_service.dart';
 import 'package:bikeapp/core/services/gps_service.dart';
+import 'package:bikeapp/data/repositories/ride_repository.dart';
+import 'package:bikeapp/data/models/ride.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
@@ -22,6 +25,7 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
   final _endController = TextEditingController();
   final _routingService = RoutingService();
   final _gpsService = GpsService();
+  final _rideRepository = RideRepository();
   final _mapController = MapController();
 
   // Route planning
@@ -42,6 +46,7 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
   double _totalDistance = 0.0;
   int _elapsedSeconds = 0;
   double _currentSpeed = 0.0;
+  DateTime? _rideStartTime;
   Timer? _timer;
   StreamSubscription<Position>? _positionStream;
 
@@ -198,6 +203,7 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
       _actualRoute = [];
       _totalDistance = 0.0;
       _elapsedSeconds = 0;
+      _rideStartTime = DateTime.now();
       if (_currentLocation != null) {
         _actualRoute.add(_currentLocation!);
       }
@@ -261,57 +267,234 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
   }
 
   void _showRideSummary() {
+    final TextEditingController rideNameController = TextEditingController();
+    String selectedType = 'Recreation';
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Ride Complete!'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSummaryRow(Icons.straighten, 'Distance', _formatDistance(_totalDistance)),
-            const SizedBox(height: 12),
-            _buildSummaryRow(Icons.access_time, 'Duration', _formatDuration(_elapsedSeconds)),
-            const SizedBox(height: 12),
-            _buildSummaryRow(
-              Icons.speed,
-              'Avg Speed',
-              _elapsedSeconds > 0
-                  ? '${((_totalDistance / 1000) / (_elapsedSeconds / 3600)).toStringAsFixed(1)} km/h'
-                  : '0 km/h',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Ride Complete!'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSummaryRow(Icons.straighten, 'Distance', _formatDistance(_totalDistance)),
+                const SizedBox(height: 12),
+                _buildSummaryRow(Icons.access_time, 'Duration', _formatDuration(_elapsedSeconds)),
+                const SizedBox(height: 12),
+                _buildSummaryRow(
+                  Icons.speed,
+                  'Avg Speed',
+                  _elapsedSeconds > 0
+                      ? '${((_totalDistance / 1000) / (_elapsedSeconds / 3600)).toStringAsFixed(1)} km/h'
+                      : '0 km/h',
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: rideNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Ride Name',
+                    hintText: 'e.g., Morning Commute',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedType,
+                  decoration: InputDecoration(
+                    labelText: 'Ride Type',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Recreation', child: Text('Recreation')),
+                    DropdownMenuItem(value: 'Commute', child: Text('Commute')),
+                  ],
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedType = value!;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                rideNameController.dispose();
+                Navigator.of(context).pop();
+                setState(() {
+                  _isRiding = false;
+                  _isPaused = false;
+                  _actualRoute = [];
+                  _totalDistance = 0.0;
+                  _elapsedSeconds = 0;
+                  _currentSpeed = 0.0;
+                  _plannedRoute = [];
+                  _endPoint = null;
+                  _endController.clear();
+                });
+              },
+              child: const Text('Discard'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await _saveRide(
+                  rideName: rideNameController.text.trim(),
+                  rideType: selectedType,
+                );
+                rideNameController.dispose();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryOrange,
+              ),
+              child: const Text('Save Ride', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              setState(() {
-                _isRiding = false;
-                _isPaused = false;
-                _actualRoute = [];
-                _totalDistance = 0.0;
-                _elapsedSeconds = 0;
-                _currentSpeed = 0.0;
-              });
-            },
-            child: const Text('Discard'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Save ride to Firestore
-              Navigator.of(context).pop();
-              Navigator.of(context).pop(); // Go back to dashboard
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryOrange,
-            ),
-            child: const Text('Save Ride', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
+  }
+
+  Future<void> _saveRide({required String rideName, required String rideType}) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryOrange),
+        ),
+      );
+
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('No user logged in');
+      }
+
+      // Generate ride name if not provided
+      final finalRideName = rideName.isEmpty
+          ? _generateRideName()
+          : rideName;
+
+      // Calculate average speed
+      final avgSpeed = _elapsedSeconds > 0
+          ? (_totalDistance / 1000) / (_elapsedSeconds / 3600)
+          : 0.0;
+
+      // Create ride object
+      final ride = Ride(
+        id: '', // Will be set by Firestore
+        userId: userId,
+        name: finalRideName,
+        type: rideType,
+        distance: _totalDistance,
+        duration: _elapsedSeconds,
+        averageSpeed: avgSpeed,
+        startTime: _rideStartTime!,
+        endTime: DateTime.now(),
+        actualRoute: _actualRoute,
+        plannedRoute: _plannedRoute.isNotEmpty ? _plannedRoute : null,
+        startLocation: _actualRoute.isNotEmpty ? _actualRoute.first : null,
+        endLocation: _actualRoute.isNotEmpty ? _actualRoute.last : null,
+        createdAt: DateTime.now(),
+      );
+
+      // Save to Firestore
+      await _rideRepository.saveRide(ride);
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Close summary dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Ride "$finalRideName" saved successfully!')),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // Go back to dashboard
+        Navigator.of(context).pop();
+      }
+
+      // Reset state
+      setState(() {
+        _isRiding = false;
+        _isPaused = false;
+        _actualRoute = [];
+        _totalDistance = 0.0;
+        _elapsedSeconds = 0;
+        _currentSpeed = 0.0;
+        _plannedRoute = [];
+        _endPoint = null;
+        _endController.clear();
+      });
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Error saving ride: $e')),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  String _generateRideName() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    
+    String timeOfDay;
+    if (hour < 12) {
+      timeOfDay = 'Morning';
+    } else if (hour < 17) {
+      timeOfDay = 'Afternoon';
+    } else {
+      timeOfDay = 'Evening';
+    }
+    
+    return '$timeOfDay Ride';
   }
 
   Widget _buildSummaryRow(IconData icon, String label, String value) {

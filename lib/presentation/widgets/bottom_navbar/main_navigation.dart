@@ -18,13 +18,13 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
-  // Pages for each tab
-  final List<Widget> _pages = const [
-    DashboardPage(),
-    RidesPage(),
-    GoalsPage(),
-    StatisticsPage(),
-    ProfilePage(),
+  // Pages for each tab - recreate on each tab switch to force refresh
+  List<Widget> get _pages => [
+    const DashboardPage(),
+    const RidesPage(),
+    const GoalsPage(),
+    const StatisticsPage(),
+    const ProfilePage(),
   ];
 
   void _onTabTapped(int index) {
@@ -36,10 +36,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
