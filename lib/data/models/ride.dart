@@ -18,6 +18,7 @@ class Ride {
   final LatLng? startLocation;
   final LatLng? endLocation;
   final String? notes;
+  final double? calories; // Calories burned during the ride (kcal)
   final DateTime createdAt;
 
   Ride({
@@ -35,6 +36,7 @@ class Ride {
     this.startLocation,
     this.endLocation,
     this.notes,
+    this.calories,
     required this.createdAt,
   });
 
@@ -67,6 +69,7 @@ class Ride {
             )
           : null,
       notes: data['notes'],
+      calories: data['calories'] != null ? (data['calories'] as num).toDouble() : null,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
     );
   }
@@ -97,6 +100,7 @@ class Ride {
             }
           : null,
       'notes': notes,
+      'calories': calories,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -140,6 +144,7 @@ class Ride {
     LatLng? startLocation,
     LatLng? endLocation,
     String? notes,
+    double? calories,
     DateTime? createdAt,
   }) {
     return Ride(
@@ -157,6 +162,7 @@ class Ride {
       startLocation: startLocation ?? this.startLocation,
       endLocation: endLocation ?? this.endLocation,
       notes: notes ?? this.notes,
+      calories: calories ?? this.calories,
       createdAt: createdAt ?? this.createdAt,
     );
   }

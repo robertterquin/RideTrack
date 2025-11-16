@@ -239,6 +239,18 @@ class RideDetailPage extends StatelessWidget {
             label: 'Avg Speed',
             value: '${ride.averageSpeed.toStringAsFixed(1)} km/h',
           ),
+          if (ride.calories != null) ...[
+            Container(
+              width: 1,
+              height: 60,
+              color: AppColors.primaryPurple.withOpacity(0.2),
+            ),
+            _buildStatItem(
+              icon: Icons.local_fire_department,
+              label: 'Calories',
+              value: '${ride.calories!.toStringAsFixed(0)} kcal',
+            ),
+          ],
         ],
       ),
     );

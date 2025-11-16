@@ -72,7 +72,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
   double get _averageDistance => _totalRides == 0 ? 0.0 : _totalDistance / _totalRides;
   int get _averageDuration => _totalRides == 0 ? 0 : _totalDuration ~/ _totalRides;
   double get _longestRide => _filteredRides.isEmpty ? 0.0 : _filteredRides.map((r) => r.distance / 1000).reduce((a, b) => a > b ? a : b);
-  int get _estimatedCalories => (_totalDistance * 50).toInt(); // ~50 kcal per km
+  double get _totalCalories {
+    // Sum actual calories from rides that have the data
+    final ridesWithCalories = _filteredRides.where((r) => r.calories != null);
+    if (ridesWithCalories.isEmpty) {
+      // Fallback to estimation if no rides have calorie data
+      return _totalDistance * 50; // ~50 kcal per km estimate
+    }
+    return ridesWithCalories.fold(0.0, (sum, ride) => sum + ride.calories!);
+  }
+  double get _averageCalories => _totalRides == 0 ? 0.0 : _totalCalories / _totalRides;
 
   Map<String, int> get _ridesByType {
     final map = <String, int>{};
@@ -118,7 +127,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       children: [
                         Expanded(child: _buildMetricCard('Total Time', _formatDuration(_totalDuration), Icons.access_time, AppColors.success)),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildMetricCard('Avg Speed', '${_averageSpeed.toStringAsFixed(1)} km/h', Icons.speed, AppColors.primaryOrange)),
+                        Expanded(child: _buildMetricCard('Calories', '${_totalCalories.toStringAsFixed(0)} kcal', Icons.local_fire_department, Colors.deepOrange)),
                       ],
                     ),
 
@@ -133,6 +142,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       _buildStatRow('Average Duration', _formatDuration(_averageDuration)),
                       const Divider(height: 24),
                       _buildStatRow('Average Speed', '${_averageSpeed.toStringAsFixed(1)} km/h'),
+                      const Divider(height: 24),
+                      _buildStatRow('Average Calories', '${_averageCalories.toStringAsFixed(0)} kcal'),
                     ]),
 
                     const SizedBox(height: 24),
@@ -143,7 +154,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     _buildStatsCard([
                       _buildStatRow('Longest Ride', '${_longestRide.toStringAsFixed(1)} km'),
                       const Divider(height: 24),
-                      _buildStatRow('Estimated Calories', '$_estimatedCalories kcal'),
+                      _buildStatRow('Total Calories', '${_totalCalories.toStringAsFixed(0)} kcal'),
                       const Divider(height: 24),
                       _buildStatRow('Total Activities', '$_totalRides rides'),
                     ]),

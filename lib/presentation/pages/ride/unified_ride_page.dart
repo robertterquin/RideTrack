@@ -11,6 +11,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:bikeapp/core/utils/calorie_calculator.dart';
 
 /// Unified Ride Page
 /// Plan routes, start rides, track GPS with optional route following
@@ -266,9 +268,40 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
     _showRideSummary();
   }
 
-  void _showRideSummary() {
+  void _showRideSummary() async {
     final TextEditingController rideNameController = TextEditingController();
     String selectedType = 'Recreation';
+    
+    // Calculate estimated calories
+    double? estimatedCalories;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      try {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+        
+        if (userDoc.exists) {
+          final weight = (userDoc.data()?['weight'] as num?)?.toDouble();
+          final avgSpeed = _elapsedSeconds > 0
+              ? (_totalDistance / 1000) / (_elapsedSeconds / 3600)
+              : 0.0;
+          
+          if (weight != null && weight > 0) {
+            estimatedCalories = CalorieCalculator.calculateCaloriesFromSeconds(
+              weightKg: weight,
+              avgSpeedKmh: avgSpeed,
+              durationSeconds: _elapsedSeconds,
+            );
+          }
+        }
+      } catch (e) {
+        print('Error calculating calories for summary: $e');
+      }
+    }
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -292,6 +325,10 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
                       ? '${((_totalDistance / 1000) / (_elapsedSeconds / 3600)).toStringAsFixed(1)} km/h'
                       : '0 km/h',
                 ),
+                if (estimatedCalories != null) ...[
+                  const SizedBox(height: 12),
+                  _buildSummaryRow(Icons.local_fire_department, 'Calories', '${estimatedCalories.toStringAsFixed(0)} kcal'),
+                ],
                 const SizedBox(height: 20),
                 const Divider(),
                 const SizedBox(height: 12),
@@ -393,6 +430,30 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
           ? (_totalDistance / 1000) / (_elapsedSeconds / 3600)
           : 0.0;
 
+      // Fetch user weight for calorie calculation
+      double? calories;
+      try {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+        
+        if (userDoc.exists) {
+          final weight = (userDoc.data()?['weight'] as num?)?.toDouble();
+          if (weight != null && weight > 0) {
+            // Calculate calories using MET formula
+            calories = CalorieCalculator.calculateCaloriesFromSeconds(
+              weightKg: weight,
+              avgSpeedKmh: avgSpeed,
+              durationSeconds: _elapsedSeconds,
+            );
+          }
+        }
+      } catch (e) {
+        print('Error calculating calories: $e');
+        // Continue without calories if there's an error
+      }
+
       // Create ride object
       final ride = Ride(
         id: '', // Will be set by Firestore
@@ -408,6 +469,7 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
         plannedRoute: _plannedRoute.isNotEmpty ? _plannedRoute : null,
         startLocation: _actualRoute.isNotEmpty ? _actualRoute.first : null,
         endLocation: _actualRoute.isNotEmpty ? _actualRoute.last : null,
+        calories: calories,
         createdAt: DateTime.now(),
       );
 

@@ -533,12 +533,13 @@ class _DashboardPageState extends State<DashboardPage> {
                     )
                   else
                     ..._recentRides.map((ride) {
+                      final caloriesText = ride.calories != null ? ' • ${ride.calories!.toStringAsFixed(0)} kcal' : '';
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _buildRideCard(
                           ride: ride,
                           title: ride.name,
-                          stats: '${_formatDistance(ride.distance)} • ${_formatDuration(ride.duration)}',
+                          stats: '${_formatDistance(ride.distance)} • ${_formatDuration(ride.duration)}$caloriesText',
                           time: _formatDate(ride.startTime),
                           icon: _getRideIcon(ride),
                         ),
