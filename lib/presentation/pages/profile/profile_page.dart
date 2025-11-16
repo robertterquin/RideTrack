@@ -247,43 +247,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
-
-                  // Stats Cards
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icons.directions_bike,
-                            value: _totalRides.toString(),
-                            label: 'Total Rides',
-                            color: AppColors.primaryOrange,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icons.straighten,
-                            value: '${_totalDistance.toStringAsFixed(1)} km',
-                            label: 'Distance',
-                            color: AppColors.primaryPurple,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icons.access_time,
-                            value: _formatDuration(_totalTime),
-                            label: 'Time',
-                            color: AppColors.success,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 24),
 
                   // Achievements Section

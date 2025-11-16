@@ -25,6 +25,8 @@ class _DashboardPageState extends State<DashboardPage> {
   List<Ride> _recentRides = [];
   bool _isLoadingRides = true;
   Map<String, dynamic>? _userStats;
+  Map<String, dynamic>? _weeklyStats;
+  bool _isLoadingWeeklyStats = true;
 
   @override
   void initState() {
@@ -33,6 +35,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _loadUserData();
     _loadRecentRides();
     _loadUserStats();
+    _loadWeeklyStats();
   }
 
   /// Load user data from Firestore
@@ -134,6 +137,78 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     } catch (e) {
       print('❌ Error loading user stats: $e');
+    }
+  }
+
+  /// Load weekly stats (current week)
+  Future<void> _loadWeeklyStats() async {
+    print('📊 Loading weekly stats...');
+    setState(() {
+      _isLoadingWeeklyStats = true;
+    });
+
+    try {
+      // Get all rides
+      final allRides = await _rideRepository.getRides();
+      
+      // Calculate start of current week (Monday)
+      final now = DateTime.now();
+      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+      final weekStartDate = DateTime(weekStart.year, weekStart.month, weekStart.day);
+      
+      print('📅 Week start: $weekStartDate');
+      
+      // Filter rides for current week
+      final weekRides = allRides.where((ride) {
+        return ride.startTime.isAfter(weekStartDate);
+      }).toList();
+      
+      print('📊 Found ${weekRides.length} rides this week');
+      
+      // Calculate weekly totals
+      double totalDistance = 0;
+      int totalRides = weekRides.length;
+      double totalCalories = 0;
+      
+      for (var ride in weekRides) {
+        totalDistance += ride.distance;
+        if (ride.calories != null) {
+          totalCalories += ride.calories!;
+        }
+      }
+      
+      // Weekly goals (you can make these configurable later)
+      const double weeklyDistanceGoal = 50000; // 50 km in meters
+      const int weeklyRidesGoal = 6;
+      const double weeklyCaloriesGoal = 1400; // kcal
+      
+      // Calculate progress percentages
+      final distanceProgress = (totalDistance / weeklyDistanceGoal).clamp(0.0, 1.0);
+      final ridesProgress = (totalRides / weeklyRidesGoal).clamp(0.0, 1.0);
+      final caloriesProgress = (totalCalories / weeklyCaloriesGoal).clamp(0.0, 1.0);
+      
+      if (mounted) {
+        setState(() {
+          _weeklyStats = {
+            'distance': totalDistance,
+            'distanceProgress': distanceProgress,
+            'rides': totalRides,
+            'ridesProgress': ridesProgress,
+            'calories': totalCalories,
+            'caloriesProgress': caloriesProgress,
+          };
+          _isLoadingWeeklyStats = false;
+        });
+      }
+      
+      print('✅ Weekly stats loaded: $_weeklyStats');
+    } catch (e) {
+      print('❌ Error loading weekly stats: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingWeeklyStats = false;
+        });
+      }
     }
   }
 
@@ -428,7 +503,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // TODO: Navigate to statistics
+                          DefaultTabController.of(context).animateTo(2);
                         },
                         child: const Text(
                           'See All',
@@ -438,22 +513,63 @@ class _DashboardPageState extends State<DashboardPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                  if (_isLoadingWeeklyStats)
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: AppColors.primaryOrange),
+                      ),
+                    )
+                  else if (_weeklyStats == null)
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'No weekly data available',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildWeeklyStatRow(
+                            'Distance',
+                            _formatDistance(_weeklyStats!['distance']),
+                            '${(_weeklyStats!['distanceProgress'] * 100).toInt()}%',
+                            _weeklyStats!['distanceProgress'],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildWeeklyStatRow(
+                            'Rides',
+                            '${_weeklyStats!['rides']} rides',
+                            '${(_weeklyStats!['ridesProgress'] * 100).toInt()}%',
+                            _weeklyStats!['ridesProgress'],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildWeeklyStatRow(
+                            'Calories',
+                            '${_weeklyStats!['calories'].toStringAsFixed(0)} kcal',
+                            '${(_weeklyStats!['caloriesProgress'] * 100).toInt()}%',
+                            _weeklyStats!['caloriesProgress'],
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      children: [
-                        _buildWeeklyStatRow('Distance', '45 km', '80%', 0.8),
-                        const SizedBox(height: 16),
-                        _buildWeeklyStatRow('Rides', '4 rides', '67%', 0.67),
-                        const SizedBox(height: 16),
-                        _buildWeeklyStatRow('Calories', '1,250 kcal', '90%', 0.9),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
