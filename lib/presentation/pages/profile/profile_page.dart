@@ -324,148 +324,139 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            children: [
-                              _buildSettingsTile(
-                                icon: Icons.person_outline,
-                                title: 'Edit Profile',
-                                subtitle: 'Update your personal information',
-                                onTap: () async {
-                                  final result = await Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => const EditProfilePage(),
-                                    ),
-                                  );
-                                  
-                                  // Reload user data if profile was updated
-                                  if (result == true) {
-                                    _loadUserData();
-                                  }
-                                },
+                        _buildModernSettingsTile(
+                          icon: Icons.person_outline,
+                          title: 'Edit Profile',
+                          subtitle: 'Update your personal information',
+                          color: AppColors.primaryOrange,
+                          onTap: () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const EditProfilePage(),
                               ),
-                              const Divider(height: 1),
-                              _buildSettingsTile(
-                                icon: Icons.tune,
-                                title: 'Preferences',
-                                subtitle: 'Units, default ride type',
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Row(
-                                        children: [
-                                          Icon(Icons.info_outline, color: Colors.white),
-                                          SizedBox(width: 12),
-                                          Text('Preferences coming soon!'),
-                                        ],
-                                      ),
-                                      backgroundColor: AppColors.primaryPurple,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      margin: const EdgeInsets.all(16),
-                                    ),
-                                  );
-                                },
+                            );
+                            
+                            // Reload user data if profile was updated
+                            if (result == true) {
+                              _loadUserData();
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModernSettingsTile(
+                          icon: Icons.tune,
+                          title: 'Preferences',
+                          subtitle: 'Units, default ride type',
+                          color: AppColors.primaryPurple,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Row(
+                                  children: [
+                                    Icon(Icons.info_outline, color: Colors.white),
+                                    SizedBox(width: 12),
+                                    Text('Preferences coming soon!'),
+                                  ],
+                                ),
+                                backgroundColor: AppColors.primaryPurple,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                margin: const EdgeInsets.all(16),
                               ),
-                              const Divider(height: 1),
-                              _buildSettingsTile(
-                                icon: Icons.notifications_none,
-                                title: 'Notifications',
-                                subtitle: 'Manage notification preferences',
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Row(
-                                        children: [
-                                          Icon(Icons.info_outline, color: Colors.white),
-                                          SizedBox(width: 12),
-                                          Text('Notifications coming soon!'),
-                                        ],
-                                      ),
-                                      backgroundColor: AppColors.primaryOrange,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      margin: const EdgeInsets.all(16),
-                                    ),
-                                  );
-                                },
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModernSettingsTile(
+                          icon: Icons.notifications_none,
+                          title: 'Notifications',
+                          subtitle: 'Manage notification preferences',
+                          color: AppColors.primaryOrange,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Row(
+                                  children: [
+                                    Icon(Icons.info_outline, color: Colors.white),
+                                    SizedBox(width: 12),
+                                    Text('Notifications coming soon!'),
+                                  ],
+                                ),
+                                backgroundColor: AppColors.primaryOrange,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                margin: const EdgeInsets.all(16),
                               ),
-                              const Divider(height: 1),
-                              _buildSettingsTile(
-                                icon: Icons.lock_outline,
-                                title: 'Privacy & Security',
-                                subtitle: 'Manage your account security',
-                                onTap: () {
-                                  Navigator.of(context).pushNamed('/forgot_password');
-                                },
-                              ),
-                            ],
-                          ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModernSettingsTile(
+                          icon: Icons.lock_outline,
+                          title: 'Privacy & Security',
+                          subtitle: 'Manage your account security',
+                          color: AppColors.success,
+                          onTap: () {
+                            Navigator.of(context).pushNamed('/forgot_password');
+                          },
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // About & Support
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildSettingsTile(
-                            icon: Icons.help_outline,
-                            title: 'Help & Support',
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Row(
-                                    children: [
-                                      Icon(Icons.info_outline, color: Colors.white),
-                                      SizedBox(width: 12),
-                                      Text('Help & Support coming soon!'),
-                                    ],
-                                  ),
-                                  backgroundColor: AppColors.primaryPurple,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  margin: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _buildModernSettingsTile(
+                          icon: Icons.help_outline,
+                          title: 'Help & Support',
+                          subtitle: 'Get help with your account',
+                          color: AppColors.primaryPurple,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Row(
+                                  children: [
+                                    Icon(Icons.info_outline, color: Colors.white),
+                                    SizedBox(width: 12),
+                                    Text('Help & Support coming soon!'),
+                                  ],
                                 ),
-                              );
-                            },
-                          ),
-                          const Divider(height: 1),
-                          _buildSettingsTile(
-                            icon: Icons.info_outline,
-                            title: 'About RideTrack',
-                            subtitle: 'Version 1.0.0',
-                            onTap: () {
-                              showAboutDialog(
-                                context: context,
-                                applicationName: 'RideTrack',
-                                applicationVersion: '1.0.0',
-                                applicationIcon: const Icon(
-                                  Icons.directions_bike,
-                                  size: 48,
-                                  color: AppColors.primaryOrange,
-                                ),
-                                children: [
-                                  const Text('Personal bike ride tracking app with GPS, goals, and statistics.'),
-                                ],
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                                backgroundColor: AppColors.primaryPurple,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                margin: const EdgeInsets.all(16),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModernSettingsTile(
+                          icon: Icons.info_outline,
+                          title: 'About RideTrack',
+                          subtitle: 'Version 1.0.0',
+                          color: AppColors.primaryOrange,
+                          onTap: () {
+                            showAboutDialog(
+                              context: context,
+                              applicationName: 'RideTrack',
+                              applicationVersion: '1.0.0',
+                              applicationIcon: const Icon(
+                                Icons.directions_bike,
+                                size: 48,
+                                color: AppColors.primaryOrange,
+                              ),
+                              children: [
+                                const Text('Personal bike ride tracking app with GPS, goals, and statistics.'),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
 
@@ -620,6 +611,97 @@ class _ProfilePageState extends State<ProfilePage> {
           : null,
       trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.lightGrey),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildModernSettingsTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color, color.withOpacity(0.7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundGrey,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: AppColors.textSecondary.withOpacity(0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
