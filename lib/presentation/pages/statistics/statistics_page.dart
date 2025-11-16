@@ -86,28 +86,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundGrey,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Statistics',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.primaryOrange),
-            onPressed: _loadRides,
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryOrange))
-          : RefreshIndicator(
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppColors.primaryOrange))
+            : RefreshIndicator(
               onRefresh: _loadRides,
               color: AppColors.primaryOrange,
               child: SingleChildScrollView(
@@ -188,6 +170,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 ),
               ),
             ),
+      ),
     );
   }
 
