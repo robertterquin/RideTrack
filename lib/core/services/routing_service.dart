@@ -32,7 +32,7 @@ class RoutingService {
       return [start, end];
     } catch (e) {
       print('Error getting route: $e');
-      // Fallback: direct line between points
+     
       return [start, end];
     }
   }
