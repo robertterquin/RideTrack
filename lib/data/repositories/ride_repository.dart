@@ -152,6 +152,24 @@ class RideRepository {
   /// Delete a ride
   Future<void> deleteRide(String rideId) async {
     try {
+      // First, get the ride data to decrement user stats
+      final rideDoc = await _firestore
+          .collection('rides')
+          .doc(rideId)
+          .get();
+      
+      if (rideDoc.exists && _currentUserId != null) {
+        final ride = Ride.fromFirestore(rideDoc);
+        
+        // Decrement user stats before deleting
+        await _decrementUserStats(
+          userId: _currentUserId!,
+          distance: ride.distance,
+          duration: ride.duration,
+        );
+      }
+      
+      // Now delete the ride
       await _firestore
           .collection('rides')
           .doc(rideId)
@@ -163,7 +181,7 @@ class RideRepository {
             },
           );
       
-      print('✅ Ride deleted successfully');
+      print('✅ Ride deleted successfully and stats updated');
     } catch (e) {
       print('❌ Error deleting ride: $e');
       rethrow;
@@ -208,6 +226,31 @@ class RideRepository {
     } catch (e) {
       print('⚠️ Warning: Could not update user stats: $e');
       // Don't fail the ride save if stats update fails
+    }
+  }
+
+  /// Decrement user statistics after deleting a ride
+  Future<void> _decrementUserStats({
+    required String userId,
+    required double distance,
+    required int duration,
+  }) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'totalRides': FieldValue.increment(-1),
+        'totalDistance': FieldValue.increment(-distance),
+        'totalTime': FieldValue.increment(-duration),
+      }).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          print('⚠️ Decrement user stats timed out');
+        },
+      );
+      
+      print('✅ User stats decremented');
+    } catch (e) {
+      print('⚠️ Warning: Could not decrement user stats: $e');
+      // Don't fail the ride deletion if stats update fails
     }
   }
 

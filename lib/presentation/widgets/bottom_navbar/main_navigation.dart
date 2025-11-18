@@ -18,13 +18,13 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
-  // Pages for each tab - recreate on each tab switch to force refresh
+  // Pages for each tab - use keys to force recreation on tab switch
   List<Widget> get _pages => [
-    const DashboardPage(),
-    const RidesPage(),
-    const GoalsPage(),
-    const StatisticsPage(),
-    const ProfilePage(),
+    DashboardPage(key: UniqueKey()),
+    RidesPage(key: UniqueKey()),
+    GoalsPage(key: UniqueKey()),
+    StatisticsPage(key: UniqueKey()),
+    ProfilePage(key: UniqueKey()),
   ];
 
   void _onTabTapped(int index) {

@@ -70,6 +70,124 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  /// Recalculate user stats from actual rides
+  Future<void> _recalculateStats() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // Show loading dialog
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryOrange),
+        ),
+      );
+
+      print('Recalculating stats...');
+
+      // Get all rides for this user
+      final ridesSnapshot = await FirebaseFirestore.instance
+          .collection('rides')
+          .where('userId', isEqualTo: user.uid)
+          .get();
+
+      print('Found ${ridesSnapshot.docs.length} rides');
+
+      // Calculate totals from actual rides
+      final totalRides = ridesSnapshot.docs.length;
+      double totalDistance = 0.0;
+      int totalTime = 0;
+
+      for (var doc in ridesSnapshot.docs) {
+        final data = doc.data();
+        final distance = data['distance'];
+        final duration = data['duration'];
+
+        if (distance != null) {
+          if (distance is num) {
+            totalDistance += distance.toDouble();
+          }
+        }
+        if (duration != null) {
+          if (duration is num) {
+            totalTime += duration.toInt();
+          }
+        }
+      }
+
+      print('Calculated: $totalRides rides, ${(totalDistance / 1000).toStringAsFixed(2)} km');
+
+      // Update user document with correct totals
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'totalRides': totalRides,
+        'totalDistance': totalDistance,
+        'totalTime': totalTime,
+      });
+
+      // Reload user data
+      await _loadUserData();
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Stats updated: $totalRides rides, ${(totalDistance / 1000).toStringAsFixed(1)} km'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      print('Stats recalculated successfully!');
+    } catch (e) {
+      print('Error recalculating stats: $e');
+      
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error recalculating stats: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showRecalculateDialog() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Recalculate Stats'),
+        content: const Text(
+          'This will recalculate your total rides, distance, and time based on your actual ride history. This is useful if your stats seem incorrect.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryOrange,
+            ),
+            child: const Text('Recalculate'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _recalculateStats();
+    }
+  }
+
   Future<void> _handleLogout() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -392,6 +510,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           onTap: () {
                             Navigator.of(context).pushNamed('/forgot_password');
                           },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildModernSettingsTile(
+                          icon: Icons.refresh,
+                          title: 'Recalculate Stats',
+                          subtitle: 'Fix incorrect ride statistics',
+                          color: AppColors.primaryPurple,
+                          onTap: _showRecalculateDialog,
                         ),
                       ],
                     ),

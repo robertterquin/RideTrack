@@ -38,6 +38,16 @@ class _DashboardPageState extends State<DashboardPage> {
     _loadWeeklyStats();
   }
 
+  /// Refresh all dashboard data
+  Future<void> _refreshData() async {
+    print('🔄 Refreshing dashboard data...');
+    await Future.wait([
+      _loadRecentRides(),
+      _loadUserStats(),
+      _loadWeeklyStats(),
+    ]);
+  }
+
   /// Load user data from Firestore
   Future<void> _loadUserData() async {
     try {
@@ -263,7 +273,10 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundGrey,
-      body: SingleChildScrollView(
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        color: AppColors.primaryOrange,
+        child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -668,6 +681,7 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 24),
           ],
         ),
+      ),
       ),
     );
   }
