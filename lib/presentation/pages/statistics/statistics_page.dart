@@ -136,14 +136,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     // Averages section
                     _buildSectionTitle('Averages'),
                     const SizedBox(height: 12),
-                    _buildStatsCard([
-                      _buildStatRow('Average Distance', '${_averageDistance.toStringAsFixed(1)} km'),
-                      const Divider(height: 24),
-                      _buildStatRow('Average Duration', _formatDuration(_averageDuration)),
-                      const Divider(height: 24),
-                      _buildStatRow('Average Speed', '${_averageSpeed.toStringAsFixed(1)} km/h'),
-                      const Divider(height: 24),
-                      _buildStatRow('Average Calories', '${_averageCalories.toStringAsFixed(0)} kcal'),
+                    _buildGridStats([
+                      _StatItem('Avg Distance', '${_averageDistance.toStringAsFixed(1)} km', Icons.straighten, AppColors.primaryOrange),
+                      _StatItem('Avg Duration', _formatDuration(_averageDuration), Icons.access_time, AppColors.primaryPurple),
+                      _StatItem('Avg Speed', '${_averageSpeed.toStringAsFixed(1)} km/h', Icons.speed, Colors.blue),
+                      _StatItem('Avg Calories', '${_averageCalories.toStringAsFixed(0)} kcal', Icons.local_fire_department, Colors.deepOrange),
                     ]),
 
                     const SizedBox(height: 24),
@@ -151,12 +148,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     // Records section
                     _buildSectionTitle('Records'),
                     const SizedBox(height: 12),
-                    _buildStatsCard([
-                      _buildStatRow('Longest Ride', '${_longestRide.toStringAsFixed(1)} km'),
-                      const Divider(height: 24),
-                      _buildStatRow('Total Calories', '${_totalCalories.toStringAsFixed(0)} kcal'),
-                      const Divider(height: 24),
-                      _buildStatRow('Total Activities', '$_totalRides rides'),
+                    _buildGridStats([
+                      _StatItem('Longest Ride', '${_longestRide.toStringAsFixed(1)} km', Icons.emoji_events, Colors.amber),
+                      _StatItem('Total Calories', '${_totalCalories.toStringAsFixed(0)} kcal', Icons.local_fire_department, Colors.deepOrange),
+                      _StatItem('Total Activities', '$_totalRides rides', Icons.directions_bike, AppColors.primaryPurple),
                     ]),
 
                     const SizedBox(height: 24),
@@ -289,47 +284,21 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 
-  Widget _buildStatsCard(List<Widget> children) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+  Widget _buildGridStats(List<_StatItem> items) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.3,
       ),
-      child: Column(
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildStatRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _buildMetricCard(item.label, item.value, item.icon, item.color);
+      },
     );
   }
 
@@ -493,4 +462,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
       return '${minutes}m';
     }
   }
+}
+
+class _StatItem {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  _StatItem(this.label, this.value, this.icon, this.color);
 }
