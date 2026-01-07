@@ -184,18 +184,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
           final age = _ageController.text.isNotEmpty ? int.parse(_ageController.text) : 0;
           final weight = _weightController.text.isNotEmpty ? double.parse(_weightController.text) : 0.0;
 
+          // Use set with merge to create document if it doesn't exist
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
-              .update({
+              .set({
             'name': _nameController.text.trim(),
+            'email': user.email,
             'age': age,
             'weight': weight,
             'unit': _selectedUnit,
             'defaultRideType': _defaultRideType,
             'profileImageUrl': imageUrl,
             'updatedAt': FieldValue.serverTimestamp(),
-          });
+            // Initialize stats fields if document is being created
+            'totalRides': FieldValue.increment(0),
+            'totalDistance': FieldValue.increment(0),
+            'totalTime': FieldValue.increment(0),
+            'createdAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
