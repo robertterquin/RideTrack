@@ -31,10 +31,11 @@ class GpsService {
   }
 
   /// Get current position with best accuracy
+  /// Waits longer for accurate position
   Future<Position> getCurrentPosition() async {
     return await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.bestForNavigation,
-      timeLimit: const Duration(seconds: 15),
+      timeLimit: const Duration(seconds: 30), // Longer timeout for better accuracy
     );
   }
 

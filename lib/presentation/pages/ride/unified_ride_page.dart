@@ -75,37 +75,119 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
       final hasPermission = await _gpsService.requestPermission();
       if (!hasPermission) {
         print('❌ Location permission denied');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission denied. Please enable location access in settings.'),
+              backgroundColor: AppColors.error,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
         return;
       }
 
-      // Try to get last known position first for quick initial display
-      final lastPosition = await _gpsService.getLastKnownPosition();
-      if (lastPosition != null && mounted) {
-        setState(() {
-          _currentLocation = LatLng(lastPosition.latitude, lastPosition.longitude);
-          _startPoint = _currentLocation;
-          _currentAccuracy = lastPosition.accuracy;
-        });
-        _mapController.move(_currentLocation!, 15.0);
-        print('📍 Using last known position (accuracy: ${lastPosition.accuracy.toStringAsFixed(1)}m)');
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('Getting accurate location...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
       }
 
-      // Then get fresh high-accuracy position
-      final position = await _gpsService.getCurrentPosition();
-      if (mounted) {
+      // Try to get last known position ONLY if it's recent and accurate
+      final lastPosition = await _gpsService.getLastKnownPosition();
+      if (lastPosition != null && mounted) {
+        // Check if position is recent (within last 5 minutes) and accurate (< 100m)
+        final age = DateTime.now().difference(lastPosition.timestamp);
+        if (age.inMinutes < 5 && lastPosition.accuracy < 100) {
+          setState(() {
+            _currentLocation = LatLng(lastPosition.latitude, lastPosition.longitude);
+            _startPoint = _currentLocation;
+            _currentAccuracy = lastPosition.accuracy;
+          });
+          _mapController.move(_currentLocation!, 15.0);
+          print('📍 Using recent position (age: ${age.inSeconds}s, accuracy: ${lastPosition.accuracy.toStringAsFixed(1)}m)');
+        } else {
+          print('⚠️ Skipping stale position (age: ${age.inMinutes}min, accuracy: ${lastPosition.accuracy.toStringAsFixed(1)}m)');
+        }
+      }
+
+      // Get fresh high-accuracy position with retry
+      Position? position;
+      int retries = 0;
+      while (position == null && retries < 2 && mounted) {
+        try {
+          position = await _gpsService.getCurrentPosition();
+          print('✅ Got fresh position (accuracy: ${position.accuracy.toStringAsFixed(1)}m)');
+        } catch (e) {
+          retries++;
+          print('⚠️ Attempt $retries failed: $e');
+          if (retries < 2) {
+            await Future.delayed(const Duration(seconds: 2));
+          }
+        }
+      }
+
+      if (position != null && mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         setState(() {
-          _currentLocation = LatLng(position.latitude, position.longitude);
+          _currentLocation = LatLng(position!.latitude, position.longitude);
           _startPoint = _currentLocation;
           _currentAccuracy = position.accuracy;
         });
         _mapController.move(_currentLocation!, 15.0);
-        print('✅ Got fresh position (accuracy: ${position.accuracy.toStringAsFixed(1)}m)');
+        
+        // Show accuracy warning if not very accurate
+        if (position.accuracy > 30) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Location accuracy: ±${position.accuracy.toStringAsFixed(0)}m. Move to open area for better accuracy.'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not get accurate location. Please check GPS and try again.'),
+            backgroundColor: AppColors.error,
+            duration: Duration(seconds: 5),
+          ),
+        );
       }
 
       // Start periodic refresh when not riding
       _startLocationRefresh();
     } catch (e) {
       print('❌ Error getting current location: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Location error: $e'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 
@@ -712,6 +794,61 @@ class _UnifiedRidePageState extends State<UnifiedRidePage> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: !_isRiding
+            ? [
+                // Location accuracy indicator
+                if (_currentAccuracy > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _currentAccuracy < 20
+                              ? Colors.green.withOpacity(0.1)
+                              : _currentAccuracy < 50
+                                  ? Colors.orange.withOpacity(0.1)
+                                  : Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.gps_fixed,
+                              size: 14,
+                              color: _currentAccuracy < 20
+                                  ? Colors.green
+                                  : _currentAccuracy < 50
+                                      ? Colors.orange
+                                      : Colors.red,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '±${_currentAccuracy.toStringAsFixed(0)}m',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: _currentAccuracy < 20
+                                    ? Colors.green
+                                    : _currentAccuracy < 50
+                                        ? Colors.orange
+                                        : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                // Refresh location button
+                IconButton(
+                  icon: const Icon(Icons.my_location, color: AppColors.primaryOrange),
+                  onPressed: _getCurrentLocation,
+                  tooltip: 'Refresh location',
+                ),
+              ]
+            : null,
       ),
       body: Stack(
         children: [
